@@ -1,0 +1,125 @@
+﻿using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Xml.Serialization;
+
+namespace HostelFinderPrototype
+{
+    public static class DataStore
+    {
+        public static List<User> Users = new List<User>();
+        public static List<Hostel> Hostels = new List<Hostel>()
+        {
+            new Hostel { Name = "Shalom Hostel", Location = "Main Campus Road", Price = 500000, AvailableRooms = 15, UnavailableRooms = 5, Rating = 4.5, Condition = "Excellent", ManagerContact = "0770000000" }
+        };
+
+        // Event to notify UI when hostels change at runtime
+        public static event Action HostelsChanged;
+
+        public static void NotifyHostelsChanged()
+        {
+            HostelsChanged?.Invoke();
+        }
+
+        static DataStore()
+        {
+            // Load persisted users first (if any)
+            LoadUsers();
+
+            // Seed additional hostels so student view has initial data
+            if (!Hostels.Exists(h => h.Name.Equals("Joy Hostel", StringComparison.OrdinalIgnoreCase)))
+            {
+                Hostels.Add(new Hostel { Name = "Joy Hostel", Location = "Hill Side", Price = 1200000m, AvailableRooms = 10, UnavailableRooms = 0, Rating = 4.2, Condition = "Good", ManagerContact = "0771000001" });
+            }
+
+            if (!Hostels.Exists(h => h.Name.Equals("Pimez Hostel", StringComparison.OrdinalIgnoreCase)))
+            {
+                Hostels.Add(new Hostel { Name = "Pimez Hostel", Location = "Palm Ville", Price = 990000m, AvailableRooms = 8, UnavailableRooms = 0, Rating = 4.0, Condition = "Good", ManagerContact = "0771000002" });
+            }
+
+            var generated = new[] {
+                new Hostel { Name = "Sunrise Lodge", Location = "East End", Price = 750000m, AvailableRooms = 6, UnavailableRooms = 0, Rating = 3.8, Condition = "Fair", ManagerContact = "0771000003" },
+                new Hostel { Name = "Green Garden", Location = "West Park", Price = 680000m, AvailableRooms = 12, UnavailableRooms = 0, Rating = 4.1, Condition = "Good", ManagerContact = "0771000004" },
+                new Hostel { Name = "Lakeview Suites", Location = "Lakeside", Price = 1500000m, AvailableRooms = 4, UnavailableRooms = 0, Rating = 4.6, Condition = "Excellent", ManagerContact = "0771000005" },
+                new Hostel { Name = "Maple Residency", Location = "Old Town", Price = 540000m, AvailableRooms = 20, UnavailableRooms = 0, Rating = 3.9, Condition = "Good", ManagerContact = "0771000006" },
+                new Hostel { Name = "Bright Homes", Location = "Central", Price = 880000m, AvailableRooms = 9, UnavailableRooms = 0, Rating = 4.0, Condition = "Good", ManagerContact = "0771000007" }
+            };
+
+            foreach (var g in generated)
+            {
+                if (!Hostels.Exists(h => h.Name.Equals(g.Name, StringComparison.OrdinalIgnoreCase)))
+                {
+                    Hostels.Add(g);
+                }
+            }
+        }
+
+        private static string GetDataFolder()
+        {
+            var folder = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "HostelFinderPrototype");
+            if (!Directory.Exists(folder)) Directory.CreateDirectory(folder);
+            return folder;
+        }
+
+        private static string UsersFilePath => Path.Combine(GetDataFolder(), "users.xml");
+
+        public static void SaveUsers()
+        {
+            try
+            {
+                var path = UsersFilePath;
+                var serializer = new XmlSerializer(typeof(List<User>));
+                using (var fs = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.None))
+                {
+                    serializer.Serialize(fs, Users);
+                }
+            }
+            catch
+            {
+                // Swallow exceptions for now; could log in future
+            }
+        }
+
+        public static void LoadUsers()
+        {
+            try
+            {
+                var path = UsersFilePath;
+                if (!File.Exists(path)) return;
+                var serializer = new XmlSerializer(typeof(List<User>));
+                using (var fs = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.Read))
+                {
+                    var users = (List<User>)serializer.Deserialize(fs);
+                    if (users != null)
+                    {
+                        Users = users;
+                    }
+                }
+            }
+            catch
+            {
+                // ignore errors reading persisted users
+            }
+        }
+    }
+
+    public class User
+    {
+        public string Name { get; set; }
+        public string Email { get; set; } // Representing the Gmail account
+        public string Password { get; set; }
+        public string Role { get; set; } // "Student" or "Manager"
+    }
+
+    public class Hostel
+    {
+        public string Name { get; set; }
+        public string Location { get; set; }
+        public decimal Price { get; set; }
+        public int AvailableRooms { get; set; }
+        public int UnavailableRooms { get; set; }
+        public double Rating { get; set; }
+        public string Condition { get; set; }
+        public string ManagerContact { get; set; }
+    }
+}

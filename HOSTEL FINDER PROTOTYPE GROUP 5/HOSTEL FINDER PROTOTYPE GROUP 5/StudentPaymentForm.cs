@@ -1,0 +1,142 @@
+using System;
+using System.Drawing;
+using System.Linq;
+using System.Windows.Forms;
+using HostelFinderPrototype;
+
+namespace HOSTEL_FINDER_PROTOTYPE_GROUP_5
+{
+    public class StudentPaymentForm : Form
+    {
+        private Hostel hostel;
+        private Label lblName, lblLocation, lblPrice, lblCondition, lblAvailable, lblManagerContact;
+        private ComboBox cmbPaymentMethod;
+        private Button btnConfirm, btnBack;
+
+        public StudentPaymentForm(Hostel selectedHostel)
+        {
+            hostel = selectedHostel ?? throw new ArgumentNullException(nameof(selectedHostel));
+            InitializeComponents();
+            LoadHostelDetails();
+        }
+
+        private void InitializeComponents()
+        {
+            this.Text = "Payment";
+            this.Size = new Size(480, 360);
+            this.StartPosition = FormStartPosition.CenterParent;
+
+            int left = 20;
+            int top = 20;
+            int labelWidth = 120;
+            int controlLeft = left + labelWidth;
+
+            lblName = new Label { Location = new Point(left, top), Size = new Size(labelWidth, 22), Text = "Hostel:" };
+            this.Controls.Add(lblName);
+            lblName = new Label { Location = new Point(controlLeft, top), AutoSize = true };
+            this.Controls.Add(lblName);
+
+            top += 28;
+            lblLocation = new Label { Location = new Point(left, top), Size = new Size(labelWidth, 22), Text = "Location:" };
+            this.Controls.Add(lblLocation);
+            lblLocation = new Label { Location = new Point(controlLeft, top), AutoSize = true };
+            this.Controls.Add(lblLocation);
+
+            top += 28;
+            lblPrice = new Label { Location = new Point(left, top), Size = new Size(labelWidth, 22), Text = "Price:" };
+            this.Controls.Add(lblPrice);
+            lblPrice = new Label { Location = new Point(controlLeft, top), AutoSize = true };
+            this.Controls.Add(lblPrice);
+
+            top += 28;
+            lblCondition = new Label { Location = new Point(left, top), Size = new Size(labelWidth, 22), Text = "Condition:" };
+            this.Controls.Add(lblCondition);
+            lblCondition = new Label { Location = new Point(controlLeft, top), AutoSize = true };
+            this.Controls.Add(lblCondition);
+
+            top += 28;
+            lblAvailable = new Label { Location = new Point(left, top), Size = new Size(labelWidth, 22), Text = "Available Rooms:" };
+            this.Controls.Add(lblAvailable);
+            lblAvailable = new Label { Location = new Point(controlLeft, top), AutoSize = true };
+            this.Controls.Add(lblAvailable);
+
+            top += 28;
+            lblManagerContact = new Label { Location = new Point(left, top), Size = new Size(labelWidth, 22), Text = "Manager Contact:" };
+            this.Controls.Add(lblManagerContact);
+            lblManagerContact = new Label { Location = new Point(controlLeft, top), AutoSize = true };
+            this.Controls.Add(lblManagerContact);
+
+            top += 40;
+            this.Controls.Add(new Label { Text = "Payment Method:", Location = new Point(left, top), Size = new Size(labelWidth, 22) });
+            cmbPaymentMethod = new ComboBox { Location = new Point(controlLeft, top - 3), Size = new Size(220, 24), DropDownStyle = ComboBoxStyle.DropDownList };
+            cmbPaymentMethod.Items.AddRange(new object[] { "MTN Mobile Money", "Airtel Money", "Cash on Arrival", "Bank Transfer" });
+            this.Controls.Add(cmbPaymentMethod);
+
+            // Back button bottom-left
+            btnBack = new Button { Text = "Back", Size = new Size(100, 30), Location = new Point(20, this.ClientSize.Height - 50), Anchor = AnchorStyles.Bottom | AnchorStyles.Left };
+            btnBack.Click += BtnBack_Click;
+            this.Controls.Add(btnBack);
+
+            // Confirm/Pay button bottom-right
+            btnConfirm = new Button { Text = "Confirm Payment", Size = new Size(140, 36), Location = new Point(this.ClientSize.Width - 160, this.ClientSize.Height - 56), Anchor = AnchorStyles.Bottom | AnchorStyles.Right };
+            btnConfirm.Click += BtnConfirm_Click;
+            this.Controls.Add(btnConfirm);
+        }
+
+        private void LoadHostelDetails()
+        {
+            // find the labels we added in InitializeComponents by position: simpler to set via controls index
+            // But we have references to these labels (we overwrote earlier local labels), adjust approach: set last-added labels.
+            // Simpler: set by searching controls with positions
+            foreach (Control c in this.Controls)
+            {
+                // nothing
+            }
+
+            // Directly set the textual labels created (we used same variable names but reassigned).
+            // The second assignment of lblName etc. points to the value labels.
+            lblName.Text = hostel.Name;
+            lblLocation.Text = hostel.Location;
+            lblPrice.Text = hostel.Price.ToString("C");
+            lblCondition.Text = hostel.Condition;
+            lblAvailable.Text = hostel.AvailableRooms.ToString();
+            lblManagerContact.Text = hostel.ManagerContact;
+        }
+
+        private void BtnConfirm_Click(object sender, EventArgs e)
+        {
+            if (cmbPaymentMethod.SelectedItem == null)
+            {
+                MessageBox.Show("Please select a payment method before proceeding.", "Payment", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return;
+            }
+
+            string method = cmbPaymentMethod.SelectedItem.ToString();
+            MessageBox.Show($"Payment process initiated via {method}.\n\nPlease contact the manager at {hostel.ManagerContact} to finalize your booking.", "Booking Successful", MessageBoxButtons.OK, MessageBoxIcon.Information);
+            this.Close();
+        }
+
+        private void BtnBack_Click(object sender, EventArgs e)
+        {
+            // Hide student dashboard if open, show login form
+            var student = Application.OpenForms.OfType<StudentDashboard>().FirstOrDefault();
+            if (student != null)
+            {
+                student.Hide();
+            }
+
+            var login = Application.OpenForms.OfType<LoginForm>().FirstOrDefault();
+            if (login != null)
+            {
+                login.Show();
+            }
+            else
+            {
+                var newLogin = new LoginForm();
+                newLogin.Show();
+            }
+
+            this.Close();
+        }
+    }
+}

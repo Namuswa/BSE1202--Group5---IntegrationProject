@@ -1,0 +1,90 @@
+﻿using System;
+using System.Drawing;
+using System.Linq;
+using System.Windows.Forms;
+using HostelFinderPrototype;
+
+namespace HOSTEL_FINDER_PROTOTYPE_GROUP_5
+{
+    public class AdminDashboard : Form
+    {
+        private DataGridView dgvUsers;
+        private Button btnBack;
+
+        public AdminDashboard()
+        {
+            this.Text = "Admin Dashboard";
+            this.StartPosition = FormStartPosition.CenterScreen;
+            this.Size = new Size(700, 500);
+            InitializeControls();
+            RefreshUserList();
+        }
+
+        private void InitializeControls()
+        {
+            var lblTitle = new Label { Text = "Registered Users", Font = new Font(FontFamily.GenericSansSerif, 12, FontStyle.Bold), Location = new Point(20, 10), AutoSize = true };
+            this.Controls.Add(lblTitle);
+
+            dgvUsers = new DataGridView
+            {
+                Location = new Point(20, 40),
+                Size = new Size(640, 360),
+                ReadOnly = true,
+                AllowUserToAddRows = false,
+                AllowUserToDeleteRows = false,
+                SelectionMode = DataGridViewSelectionMode.FullRowSelect,
+                MultiSelect = false,
+                AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.Fill
+            };
+
+            dgvUsers.Columns.Add("Name", "Name");
+            dgvUsers.Columns.Add("Email", "Email");
+            dgvUsers.Columns.Add("Role", "Role");
+            dgvUsers.Columns.Add("RegistrationTime", "Registered At");
+
+            this.Controls.Add(dgvUsers);
+
+            btnBack = new Button { Text = "Back to Login", Location = new Point(20, 420), Size = new Size(120, 30) };
+            btnBack.Click += BtnBack_Click;
+            this.Controls.Add(btnBack);
+        }
+
+        private void BtnBack_Click(object sender, EventArgs e)
+        {
+            var login = Application.OpenForms.OfType<LoginForm>().FirstOrDefault();
+            if (login != null)
+            {
+                login.Show();
+            }
+            else
+            {
+                var newLogin = new LoginForm();
+                newLogin.Show();
+            }
+            this.Hide();
+        }
+
+        private void RefreshUserList()
+        {
+            dgvUsers.Rows.Clear();
+            foreach (var u in DataStore.Users)
+            {
+                string regTime = "-";
+                var prop = u.GetType().GetProperty("RegistrationTime");
+                if (prop != null)
+                {
+                    var val = prop.GetValue(u);
+                    if (val != null)
+                    {
+                        if (val is DateTime dt && dt > DateTime.MinValue)
+                            regTime = dt.ToString("g");
+                        else
+                            regTime = val.ToString();
+                    }
+                }
+
+                dgvUsers.Rows.Add(u.Name, u.Email, u.Role, regTime);
+            }
+        }
+    }
+}

@@ -1,0 +1,260 @@
+﻿using System;
+using System.Drawing;
+using System.Windows.Forms;
+using HostelFinderPrototype;
+
+namespace HOSTEL_FINDER_PROTOTYPE_GROUP_5
+{
+    // Programmatic (non-designer) ManagerDashboard to avoid designer conflicts.
+    public class ManagerDashboard : Form
+    {
+        private TextBox txtName;
+        private TextBox txtLocation;
+        private TextBox txtPrice;
+        private TextBox txtCondition;
+        private TextBox txtAvailableRooms;
+        private TextBox txtManagerContact;
+        private Button btnSave;
+        private Button btnUpdate;
+        private Button btnDelete;
+        private Button btnNew;
+        private ListBox lstHostels;
+        private int selectedIndex = -1; // tracks selected hostel in the listbox
+
+        public ManagerDashboard()
+        {
+            this.Text = "Manager Dashboard";
+            this.StartPosition = FormStartPosition.CenterScreen;
+            this.Size = new Size(700, 500);
+            InitializeControls();
+            RefreshHostelList();
+        }
+
+        private void LstHostels_SelectedIndexChanged(object sender, EventArgs e)
+        {
+            selectedIndex = lstHostels.SelectedIndex;
+            if (selectedIndex < 0 || selectedIndex >= DataStore.Hostels.Count)
+            {
+                selectedIndex = -1;
+                btnUpdate.Enabled = false;
+                btnDelete.Enabled = false;
+                btnSave.Enabled = true;
+                return;
+            }
+
+            var h = DataStore.Hostels[selectedIndex];
+            txtName.Text = h.Name;
+            txtLocation.Text = h.Location;
+            txtPrice.Text = h.Price.ToString();
+            txtCondition.Text = h.Condition;
+            txtAvailableRooms.Text = h.AvailableRooms.ToString();
+            txtManagerContact.Text = h.ManagerContact;
+
+            btnUpdate.Enabled = true;
+            btnDelete.Enabled = true;
+            btnSave.Enabled = false; // disable add while editing
+        }
+
+        private void BtnNew_Click(object sender, EventArgs e)
+        {
+            lstHostels.ClearSelected();
+            selectedIndex = -1;
+            ClearInputs();
+            btnUpdate.Enabled = false;
+            btnDelete.Enabled = false;
+            btnSave.Enabled = true;
+        }
+
+        private void BtnUpdate_Click(object sender, EventArgs e)
+        {
+            if (selectedIndex < 0 || selectedIndex >= DataStore.Hostels.Count)
+            {
+                MessageBox.Show("No hostel selected to update.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return;
+            }
+
+            // Reuse validation from save
+            if (string.IsNullOrWhiteSpace(txtName.Text) ||
+                string.IsNullOrWhiteSpace(txtLocation.Text) ||
+                string.IsNullOrWhiteSpace(txtPrice.Text) ||
+                string.IsNullOrWhiteSpace(txtCondition.Text) ||
+                string.IsNullOrWhiteSpace(txtAvailableRooms.Text))
+            {
+                MessageBox.Show("Please fill in all fields.", "Validation", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return;
+            }
+
+            if (!decimal.TryParse(txtPrice.Text, out decimal price))
+            {
+                MessageBox.Show("Enter a valid price.", "Validation", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return;
+            }
+
+            if (!int.TryParse(txtAvailableRooms.Text, out int available))
+            {
+                MessageBox.Show("Enter a valid number for available rooms.", "Validation", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return;
+            }
+
+            var hostel = DataStore.Hostels[selectedIndex];
+            hostel.Name = txtName.Text.Trim();
+            hostel.Location = txtLocation.Text.Trim();
+            hostel.Price = price;
+            hostel.Condition = txtCondition.Text.Trim();
+            hostel.AvailableRooms = available;
+            hostel.ManagerContact = txtManagerContact.Text.Trim();
+
+            MessageBox.Show("Hostel updated.", "Success", MessageBoxButtons.OK, MessageBoxIcon.Information);
+            RefreshHostelList();
+            lstHostels.SelectedIndex = selectedIndex; // keep selection
+        }
+
+        private void BtnDelete_Click(object sender, EventArgs e)
+        {
+            if (selectedIndex < 0 || selectedIndex >= DataStore.Hostels.Count)
+            {
+                MessageBox.Show("No hostel selected to delete.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return;
+            }
+
+            var confirm = MessageBox.Show("Are you sure you want to delete the selected hostel?", "Confirm Delete", MessageBoxButtons.YesNo, MessageBoxIcon.Question);
+            if (confirm != DialogResult.Yes) return;
+
+            DataStore.Hostels.RemoveAt(selectedIndex);
+            MessageBox.Show("Hostel deleted.", "Success", MessageBoxButtons.OK, MessageBoxIcon.Information);
+            selectedIndex = -1;
+            ClearInputs();
+            RefreshHostelList();
+            btnUpdate.Enabled = false;
+            btnDelete.Enabled = false;
+            btnSave.Enabled = true;
+        }
+
+        private void InitializeControls()
+        {
+            var lblTitle = new Label { Text = "Add Hostel", Font = new Font(FontFamily.GenericSansSerif, 12, FontStyle.Bold), Location = new Point(20, 10), AutoSize = true };
+            this.Controls.Add(lblTitle);
+
+            int left = 20;
+            int top = 40;
+            int labelWidth = 120;
+            int controlWidth = 200;
+            int spacing = 35;
+
+            this.Controls.Add(new Label { Text = "Hostel Name:", Location = new Point(left, top), Size = new Size(labelWidth, 20) });
+            txtName = new TextBox { Location = new Point(left + labelWidth, top - 3), Size = new Size(controlWidth, 22) };
+            this.Controls.Add(txtName);
+
+            top += spacing;
+            this.Controls.Add(new Label { Text = "Location:", Location = new Point(left, top), Size = new Size(labelWidth, 20) });
+            txtLocation = new TextBox { Location = new Point(left + labelWidth, top - 3), Size = new Size(controlWidth, 22) };
+            this.Controls.Add(txtLocation);
+
+            top += spacing;
+            this.Controls.Add(new Label { Text = "Price:", Location = new Point(left, top), Size = new Size(labelWidth, 20) });
+            txtPrice = new TextBox { Location = new Point(left + labelWidth, top - 3), Size = new Size(controlWidth, 22) };
+            this.Controls.Add(txtPrice);
+
+            top += spacing;
+            this.Controls.Add(new Label { Text = "Condition:", Location = new Point(left, top), Size = new Size(labelWidth, 20) });
+            txtCondition = new TextBox { Location = new Point(left + labelWidth, top - 3), Size = new Size(controlWidth, 22) };
+            this.Controls.Add(txtCondition);
+
+            top += spacing;
+            this.Controls.Add(new Label { Text = "Available Rooms:", Location = new Point(left, top), Size = new Size(labelWidth, 20) });
+            txtAvailableRooms = new TextBox { Location = new Point(left + labelWidth, top - 3), Size = new Size(controlWidth, 22) };
+            this.Controls.Add(txtAvailableRooms);
+
+            top += spacing;
+            this.Controls.Add(new Label { Text = "Manager Contact:", Location = new Point(left, top), Size = new Size(labelWidth, 20) });
+            txtManagerContact = new TextBox { Location = new Point(left + labelWidth, top - 3), Size = new Size(controlWidth, 22) };
+            this.Controls.Add(txtManagerContact);
+
+            top += spacing + 5;
+            btnSave = new Button { Text = "Add Hostel", Location = new Point(left + labelWidth, top), Size = new Size(100, 28) };
+            btnSave.Click += BtnSave_Click;
+            this.Controls.Add(btnSave);
+
+            btnUpdate = new Button { Text = "Update", Location = new Point(left + labelWidth + 105, top), Size = new Size(80, 28), Enabled = false };
+            btnUpdate.Click += BtnUpdate_Click;
+            this.Controls.Add(btnUpdate);
+
+            btnDelete = new Button { Text = "Delete", Location = new Point(left + labelWidth + 190, top), Size = new Size(80, 28), Enabled = false };
+            btnDelete.Click += BtnDelete_Click;
+            this.Controls.Add(btnDelete);
+
+            btnNew = new Button { Text = "New", Location = new Point(left + labelWidth + 275, top), Size = new Size(60, 28) };
+            btnNew.Click += BtnNew_Click;
+            this.Controls.Add(btnNew);
+
+            // Right side: list of hostels
+            lstHostels = new ListBox { Location = new Point(360, 40), Size = new Size(300, 380) };
+            lstHostels.SelectedIndexChanged += LstHostels_SelectedIndexChanged;
+            this.Controls.Add(lstHostels);
+
+            var lblList = new Label { Text = "Existing Hostels:", Location = new Point(360, 15), AutoSize = true, Font = new Font(FontFamily.GenericSansSerif, 10, FontStyle.Bold) };
+            this.Controls.Add(lblList);
+        }
+
+        private void BtnSave_Click(object sender, EventArgs e)
+        {
+            if (string.IsNullOrWhiteSpace(txtName.Text) ||
+                string.IsNullOrWhiteSpace(txtLocation.Text) ||
+                string.IsNullOrWhiteSpace(txtPrice.Text) ||
+                string.IsNullOrWhiteSpace(txtCondition.Text) ||
+                string.IsNullOrWhiteSpace(txtAvailableRooms.Text))
+            {
+                MessageBox.Show("Please fill in all fields.", "Validation", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return;
+            }
+
+            if (!decimal.TryParse(txtPrice.Text, out decimal price))
+            {
+                MessageBox.Show("Enter a valid price.", "Validation", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return;
+            }
+
+            if (!int.TryParse(txtAvailableRooms.Text, out int available))
+            {
+                MessageBox.Show("Enter a valid number for available rooms.", "Validation", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return;
+            }
+
+            var hostel = new Hostel
+            {
+                Name = txtName.Text.Trim(),
+                Location = txtLocation.Text.Trim(),
+                Price = price,
+                Condition = txtCondition.Text.Trim(),
+                AvailableRooms = available,
+                UnavailableRooms = 0,
+                Rating = 0,
+                ManagerContact = txtManagerContact.Text.Trim()
+            };
+
+            DataStore.Hostels.Add(hostel);
+            MessageBox.Show("Hostel saved.", "Success", MessageBoxButtons.OK, MessageBoxIcon.Information);
+            ClearInputs();
+            RefreshHostelList();
+        }
+
+        private void ClearInputs()
+        {
+            txtName.Text = "";
+            txtLocation.Text = "";
+            txtPrice.Text = "";
+            txtCondition.Text = "";
+            txtAvailableRooms.Text = "";
+            txtManagerContact.Text = "";
+        }
+
+        private void RefreshHostelList()
+        {
+            lstHostels.Items.Clear();
+            foreach (var h in DataStore.Hostels)
+            {
+                lstHostels.Items.Add($"{h.Name} | {h.Location} | {h.Price:C} | Avail: {h.AvailableRooms} | {h.Condition}");
+            }
+        }
+    }
+}

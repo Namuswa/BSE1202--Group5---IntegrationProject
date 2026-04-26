@@ -1,0 +1,42 @@
+﻿using System;
+using System.Collections.Generic;
+
+namespace HostelFinderPrototype
+{
+    public static class DataStore
+    {
+        public static List<User> Users = new List<User>();
+        public static List<Hostel> Hostels = new List<Hostel>()
+        {
+            new Hostel { Name = "Shalom Hostel", Location = "Main Campus Road", Price = 500000, AvailableRooms = 15, UnavailableRooms = 5, Rating = 4.5, Condition = "Excellent", ManagerContact = "0770000000" }
+        };
+
+        // Event to notify UI when hostels change at runtime
+        public static event Action HostelsChanged;
+
+        public static void NotifyHostelsChanged()
+        {
+            HostelsChanged?.Invoke();
+        }
+    }
+
+    public class User
+    {
+        public string Name { get; set; }
+        public string Email { get; set; } // Representing the Gmail account
+        public string Password { get; set; }
+        public string Role { get; set; } // "Student" or "Manager"
+    }
+
+    public class Hostel
+    {
+        public string Name { get; set; }
+        public string Location { get; set; }
+        public decimal Price { get; set; }
+        public int AvailableRooms { get; set; }
+        public int UnavailableRooms { get; set; }
+        public double Rating { get; set; }
+        public string Condition { get; set; }
+        public string ManagerContact { get; set; }
+    }
+}

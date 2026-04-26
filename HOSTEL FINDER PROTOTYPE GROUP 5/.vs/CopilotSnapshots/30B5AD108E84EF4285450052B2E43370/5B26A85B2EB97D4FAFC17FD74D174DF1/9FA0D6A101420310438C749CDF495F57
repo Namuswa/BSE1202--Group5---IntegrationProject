@@ -1,0 +1,112 @@
+﻿using HostelFinderPrototype;
+using System;
+using System.Collections.Generic;
+using System.ComponentModel;
+using System.Data;
+using System.Drawing;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+using System.Windows.Forms;
+
+namespace HOSTEL_FINDER_PROTOTYPE_GROUP_5
+{
+    public partial class LoginForm : Form
+    {
+        public LoginForm()
+        {
+            InitializeComponent();
+        }
+
+        private void btnRegister_Click(object sender, EventArgs e)
+        {
+            // 1. Check if any fields are left completely blank
+            if (string.IsNullOrWhiteSpace(txtName.Text) ||
+                string.IsNullOrWhiteSpace(txtEmail.Text) ||
+                string.IsNullOrWhiteSpace(txtPassword.Text))
+            {
+                MessageBox.Show("Please fill in Name, Gmail, and Password.");
+                return; // Stops the code from running further
+            }
+
+            // 2. Allow any email as long as it contains the gmail component
+            string enteredEmail = txtEmail.Text.Trim();
+            if (!enteredEmail.ToLowerInvariant().Contains("@gmail.com"))
+            {
+                MessageBox.Show("Please use a Gmail address (must include @gmail.com).");
+                return;
+            }
+
+            // 3. Ensure a role is selected from the dropdown
+            string selectedRole = cmbRole.SelectedItem?.ToString();
+            if (string.IsNullOrEmpty(selectedRole))
+            {
+                MessageBox.Show("Please select a role (Student or Manager).");
+                return;
+            }
+
+            // 4. Create the new user and save them to the global list
+            // prevent duplicate registrations for same email
+            if (DataStore.Users.Exists(u => u.Email.Equals(txtEmail.Text.Trim(), StringComparison.OrdinalIgnoreCase)))
+            {
+                MessageBox.Show("An account with this Gmail already exists. Please log in.");
+                return;
+            }
+
+            User newUser = new User
+            {
+                Name = txtName.Text,
+                Email = txtEmail.Text.Trim(),
+                Password = txtPassword.Text,
+                Role = selectedRole
+            };
+            DataStore.Users.Add(newUser);
+            // Persist users to disk
+            DataStore.SaveUsers();
+
+            MessageBox.Show("Account registered successfully! You can now log in.");
+
+            // Optional: Clear the textboxes after a successful registration
+            txtName.Clear();
+            txtPassword.Clear();
+        }
+
+        private void btnLogin_Click(object sender, EventArgs e)
+        {
+            // 1. Check if the user left the login fields blank
+            if (string.IsNullOrWhiteSpace(txtEmail.Text) || string.IsNullOrWhiteSpace(txtPassword.Text))
+            {
+                MessageBox.Show("Please enter your Gmail and Password to log in.");
+                return;
+            }
+
+            // 2. Search the DataStore for an exact match of both Email AND Password (compare emails case-insensitively)
+            string loginEmail = txtEmail.Text.Trim();
+            User foundUser = DataStore.Users.Find(u => u.Email != null && u.Email.Equals(loginEmail, StringComparison.OrdinalIgnoreCase) && u.Password == txtPassword.Text);
+
+            // 3. If a match is found, route them to the correct screen
+            if (foundUser != null)
+            {
+                this.Hide(); // Hides the login screen
+
+                if (foundUser.Role == "Student")
+                {
+                    StudentDashboard studentForm = new StudentDashboard();
+                    studentForm.FormClosed += (s, args) => this.Close(); // Closes the whole app if they close the dashboard
+                    studentForm.Show();
+                }
+                else if (foundUser.Role == "Manager")
+                {
+                    ManagerDashboard managerForm = new ManagerDashboard();
+                    managerForm.FormClosed += (s, args) => this.Close();
+                    managerForm.Show();
+                }
+            }
+            // 4. If no match is found, show an error
+            else
+            {
+                MessageBox.Show("Invalid Gmail or password. Please try again or register first.");
+            }
+        }
+    }
+}
